@@ -40,7 +40,6 @@ const AuthProvider = ({children}) =>{
         PrivateClient.post("/user", {id: userId})
         .then((res)=>{
             const {first_name, last_name, patronymic, director_id} = res.data;
-            console.log(res.data);
             setUserData((prevData) => ({
                 ...prevData,
                 firstName: first_name,
@@ -55,10 +54,20 @@ const AuthProvider = ({children}) =>{
         });
     };
 
+    const handleProtectUsers = () => {
+        return PrivateClient.post("/users")
+            .then((res) => {
+                return res.data;
+            })
+            .catch((error) => {
+                console.error(error);
+                throw error;
+            });
+    }
+
     const handleProtectTasks = () => {
         return PrivateClient.post("/all-tasks")
             .then((res) => {
-                console.log(res.data);
                 return res.data;
             })
             .catch((error) => {
@@ -66,6 +75,28 @@ const AuthProvider = ({children}) =>{
                 throw error;
             });
     };
+
+    const handleProtectTaskById = (id) => {
+        return PrivateClient.post("/task-by-id", {id_task: id})
+            .then((res) => {
+                return res.data;
+            })
+            .catch((error) => {
+                console.error(error);
+                throw error;
+            });
+    }
+
+    const handleProtectUpdateTask = ({id, description, due_date, updated_at, priority, status, assignee}) => {
+        return PrivateClient.post("/update-task", {id, description, due_date, updated_at, priority, status, assignee})
+            .then((res) => {
+                return res.data;
+            })
+            .catch((error) => {
+                console.error(error);
+                throw error;
+            });
+    }
 
     const handleSignIn = (data) =>{
         AuthClient.post("/auth",data)
@@ -96,8 +127,11 @@ const AuthProvider = ({children}) =>{
                 isUserLogged,
                 handleSignIn,
                 handleProtectUser,
+                handleProtectUsers,
                 handleLogOut,
                 handleProtectTasks,
+                handleProtectTaskById,
+                handleProtectUpdateTask,
                 error,
                 userData
             }}
