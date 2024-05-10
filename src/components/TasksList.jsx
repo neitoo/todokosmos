@@ -1,44 +1,209 @@
 import { useContext, useEffect, useState } from "react";
 import { Auth } from "../context/Auth";
+import ModalTask from "./ModalTask";
+
+export const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+};
 
 const TasksList = () => {
-    const { handleProtectTasks } = useContext(Auth);
-    const [tasks, setTasks] = useState([]);
+    const { handleProtectTasks, handleProtectUsers } = useContext(Auth);
+    const [ users, setUsers ] = useState([]);
+    const [ tasks, setTasks ] = useState([]);
+    const [ selectedDueDate, setSelectedDueDate ] = useState("all");
+    const [ selectedAssignee, setSelectedAssignee ] = useState("all");
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedTask, setSelectedTask] = useState(null);
 
     useEffect(() => {
         const fetchTasks = () => {
             handleProtectTasks()
                 .then((tasksList) => {
-                    console.log(tasksList);
                     setTasks(tasksList);
                 })
                 .catch((error) => {
-                    console.error("Error fetching tasks:", error);
+                    console.error("Ошибка:", error);
                 });
         };
-
-        fetchTasks();
-    }, [handleProtectTasks]);
     
+        const fetchUsers = () => {
+            handleProtectUsers()
+                .then((usersList) => {
+                    setUsers(usersList);
+                })
+                .catch((error) => {
+                    console.error("Ошибка:", error);
+                });
+        };
+    
+        fetchTasks();
+        fetchUsers();
+    }, []);
+
+    const getTitleColor = (task) => {
+        const currentDate = new Date();
+        const dueDate = new Date(task.due_date);
+
+        if (task.status_name === "Выполнена") {
+            return "text-green-500";
+        } else if (dueDate < currentDate) {
+            return "text-red-500";
+        } else {
+            return "text-gray-600";
+        }
+    };
+
+    const handleDueDateChange = (event) => {
+        setSelectedDueDate(event.target.value);
+    };
+
+    const handleAssigneeChange = (event) => {
+        setSelectedAssignee(event.target.value);
+    };
+
+    const handleResetFilters = () => {
+        setSelectedDueDate("all");
+        setSelectedAssignee("all");
+    };
+
+    const handleNewTask = () => {
+        setSelectedTask(null);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+    };
+
+    const handleTaskClick = (task) => {
+        setSelectedTask(task);
+        setIsModalOpen(true);
+    };
+
+    const filteredTasks = tasks
+        .filter((task) => {
+            if (selectedDueDate === "all") {
+                return true;
+            } else if (selectedDueDate === "today") {
+                const dueDate = new Date(task.due_date);
+                const today = new Date();
+                return dueDate.toDateString() === today.toDateString();
+            } else if (selectedDueDate === "week") {
+                const dueDate = new Date(task.due_date);
+                const today = new Date();
+                const weekFromToday = new Date(
+                    today.getTime() + 7 * 24 * 60 * 60 * 1000
+                );
+                return dueDate >= today && dueDate <= weekFromToday;
+            } else {
+                const dueDate = new Date(task.due_date);
+                const today = new Date();
+                const weekFromToday = new Date(
+                    today.getTime() + 7 * 24 * 60 * 60 * 1000
+                );
+                return dueDate > weekFromToday;
+            }
+        })
+        .filter((task) => {
+            if (selectedAssignee === "all") {
+                return true;
+            } else {
+                return task.assignee_name === selectedAssignee;
+            }
+        });
 
     return (
-        <div className="flex min-h-full flex-1 flex-col content-center justify-center px-6 py-12 lg:px-8 ">
-            <div className="w-3/4 ">
+        <div className="flex justify-center">
+            {isModalOpen && (
+                <ModalTask onClose={handleCloseModal} taskId={selectedTask}/>
+            )}
+            <div className="w-3/4 py-6">
                 <div className="sm:mx-auto sm:w-full sm:max-w-sm">
                     <h2 className="text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
                         Задачи
                     </h2>
                 </div>
-                <div className="grid grid-cols-4 gap-4">
-                    {tasks.map((task) => (
-                        <div key={task.id} className="bg-white shadow-lg rounded-2xl">
-                            <h3>{task.title}</h3>
-                            <p>{task.description}</p>
-                            <p>{task.due_date ? task.due_date : "Не окончена"}</p>
-                            <p>{task.priority}</p>
-                            <p>{task.status_name}</p>
-                            <p>{task.creator_name}</p>
-                            <p>{task.assignee_name}</p>
+                <div className="flex pt-6 flex-col justify-center items-center mb-4 gap-6 container sm:flex-col md:flex-row">
+                    <select
+                        className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600"
+                        value={selectedDueDate}
+                        onChange={handleDueDateChange}
+                    >
+                        <option value="all">Все задачи</option>
+                        <option value="today">Задачи на сегодня</option>
+                        <option value="week">Задачи на неделю</option>
+                        <option value="future">Задачи на будущее</option>
+                    </select>
+                    <select
+                        className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600"
+                        value={selectedAssignee}
+                        onChange={handleAssigneeChange}
+                    >
+                        <option value="all">Все пользователи</option>
+                        {users.map((user) => (
+                            <option key={user.id} value={user.fullname}>
+                                {user.fullname}
+                            </option>
+                        ))}
+                    </select>
+                    <button
+                        className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600"
+                        onClick={handleResetFilters}
+                    >
+                        Сбросить фильтры
+                    </button>
+                    <button
+                        className="px-4 py-2 bg-indigo-600 hover:bg-blue-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        onClick={handleNewTask}
+                    >
+                        Новая задача
+                    </button>
+                </div>
+                <div className="container grid gap-4 my-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ">
+                    {filteredTasks.map((task) => (
+                        <div
+                            key={task.id}
+                            className="bg-white p-3 shadow-lg rounded-xl border-2 border-solid border-gray-100"
+                            onClick={() => handleTaskClick(task.id)}
+                        >
+                            <h3
+                                className={`${getTitleColor(
+                                    task
+                                )} text-lg font-semibold`}
+                            >
+                                {task.title}
+                            </h3>
+                            <p className="text-gray-500 text-sm">
+                                Приоритет:{" "}
+                                <span className="text-black text-base">
+                                    {task.priority_name}
+                                </span>
+                            </p>
+                            <p className="text-gray-500 text-sm">
+                                Статус:{" "}
+                                <span className="text-black text-base">
+                                    {task.status_name}
+                                </span>
+                            </p>
+                            <p className="text-gray-500 text-sm">
+                                Дата окончания:{" "}
+                                <span className="text-black text-base">
+                                    {formatDate(task.due_date)}
+                                </span>
+                            </p>
+                            <p className="text-gray-500 text-sm">
+                                Ответственный:{" "}
+                                <span className="text-black text-base">
+                                    {task.assignee_name}
+                                </span>
+                            </p>
                         </div>
                     ))}
                 </div>
