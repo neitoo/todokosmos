@@ -1,16 +1,32 @@
 import { useContext, useEffect, useState } from "react";
 import { Auth } from "../context/Auth";
+import ModalTaskForm from "./ModalTaskForm";
 
-const ModalTask = ({onClose, taskId}) => {
-    const { handleProtectUpdateTask, handleProtectTaskById } = useContext(Auth);
+const ModalTask = ({onClose, task, users, onTaskUpdate}) => {
+    const { handleProtectUpdateTask, handleProtectTaskById, userData, handleProtectCreateTask } = useContext(Auth);
 
     const [updatedTask, setUpdatedTask] = useState({});
 
+    const filteredUsers = users.filter(user => user.director_id === userData.id || user.id === userData.id);
+
+    const priorityOptions = [
+        { value: 1, label: 'Высокий' },
+        { value: 2, label: 'Средний' },
+        { value: 3, label: 'Низкий' },
+    ];
+
+    const statusOptions = [
+        { value: 1, label: 'К выполнению' },
+        { value: 2, label: 'Выполняется' },
+        { value: 3, label: 'Выполнена' },
+        { value: 4, label: 'Отменена' },
+    ];
+
     useEffect(() => {
-        if (taskId) {
+        if (task.id) {
             const fetchTaskData = async () => {
                 try {
-                    const taskData = await handleProtectTaskById(taskId);
+                    const taskData = await handleProtectTaskById(task.id);
                     setUpdatedTask({
                         id: taskData.id,
                         title:taskData.title,
@@ -28,82 +44,112 @@ const ModalTask = ({onClose, taskId}) => {
                 }
             };
             fetchTaskData();
+        } else {
+            setUpdatedTask({
+                id: null,
+                title: "",
+                description: "",
+                created_at: new Date().toISOString().slice(0, 16),
+                due_date: new Date().toISOString().slice(0, 16),
+                updated_at: new Date().toISOString().slice(0, 16),
+                priority: 1,
+                status: 1,
+                creator: userData.id,
+                assignee: filteredUsers[0].id,
+            });
         }
-    }, [taskId, handleProtectTaskById]);
+    }, [task.id, handleProtectTaskById, userData.id]);
 
     const handleInputChange = (e) => {
-        setUpdatedTask({
-            ...updatedTask,
-            [e.target.name]: e.target.value,
-        });
+        if (e.target.name === 'assignee') {
+            const selectedUser = users.find(user => user.fullname === e.target.value);
+            setUpdatedTask({
+                ...updatedTask,
+                [e.target.name]: selectedUser.id,
+            });
+        } else {
+            setUpdatedTask({
+                ...updatedTask,
+                [e.target.name]: e.target.value,
+            });
+        }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        handleProtectUpdateTask({
-            id: taskId,
-            description: updatedTask.description,
-            due_date: new Date(updatedTask.due_date).toISOString(),
-            updated_at: new Date().toISOString(),
-            priority: updatedTask.priority,
-            status: updatedTask.status,
-            assignee: updatedTask.assignee,
-        })
-        onClose();
+        if (!task.id) {
+            handleProtectCreateTask({
+                title: updatedTask.title,
+                description: updatedTask.description,
+                due_date: new Date(updatedTask.due_date).toISOString(),
+                priority: updatedTask.priority,
+                status: updatedTask.status,
+                assignee: updatedTask.assignee,
+                creator: userData.id,
+            })
+            .then(() => {
+                return onTaskUpdate();
+            })
+            .then(() => {
+                onClose();
+            })
+            .catch((error) => {
+                console.error("Ошибка:", error);
+            });
+        } else {
+            handleProtectUpdateTask({
+                id: task.id,
+                description: updatedTask.description,
+                due_date: new Date(updatedTask.due_date).toISOString(),
+                updated_at: new Date().toISOString(),
+                priority: updatedTask.priority,
+                status: updatedTask.status,
+                assignee: updatedTask.assignee
+            })
+            .then(() => {
+                return onTaskUpdate();
+            })
+            .then(() => {
+                onClose();
+            })
+            .catch((error) => {
+                console.error("Ошибка:", error);
+            });
+        }
     };
+
+    
 
     return (
         <div className="flex justify-center items-center fixed inset-0 h-screen w-full bg-black bg-opacity-40">
             <div className="bg-white rounded-xl shadow-lg w-10/12 p-6 md:w-1/3 space-y-2">
-            {taskId ? (
+            {task.id ? (
                     <>
-                        <h2 className="text-2xl font-bold mb-4">{updatedTask.title}</h2>
-                        <form onSubmit={handleSubmit}>
-                            <div className="mb-4">
-                                <label htmlFor="description" className="block text-gray-700 font-bold mb-2">
-                                    Описание:
-                                </label>
-                                <textarea
-                                    id="description"
-                                    name="description"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                    value={updatedTask.description}
-                                    onChange={handleInputChange}
-                                ></textarea>
-                            </div>
-                            <div className="mb-4">
-                                <label htmlFor="due_date" className="block text-gray-700 font-bold mb-2">
-                                    Дата окончания:
-                                </label>
-                                <input
-                                    id="due_date"
-                                    name="due_date"
-                                    type="datetime-local"
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                    value={updatedTask.due_date}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-                            <div className="flex justify-between">
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 bg-indigo-600 hover:bg-blue-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                >
-                                    Сохранить
-                                </button>
-                                <button
-                                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600"
-                                    onClick={onClose}
-                                >
-                                    Закрыть
-                                </button>
-                            </div>
-                        </form>
-                    </>
+                        <ModalTaskForm 
+                            task={task} 
+                            onSubmit={handleSubmit} 
+                            onCancel={onClose}
+                            updatedTask={updatedTask}
+                            handleInputChange={handleInputChange}
+                            filteredUsers={filteredUsers}
+                            priorityOptions={priorityOptions}
+                            statusOptions={statusOptions}
+                            isUpdateForm={true}
+                            userData={userData}/>
+                    </> 
                 ) : (
                     <>
-                        <h2 className="text-2xl font-bold mb-4">Новая задача</h2>
-                        {/* Форма для создания новой задачи */}
+                        <ModalTaskForm 
+                            task={task} 
+                            onSubmit={handleSubmit} 
+                            onCancel={onClose}
+                            updatedTask={updatedTask}
+                            handleInputChange={handleInputChange}
+                            filteredUsers={filteredUsers}
+                            priorityOptions={priorityOptions}
+                            statusOptions={statusOptions}
+                            isUpdateForm={false}
+                            userData={userData}/>
                     </>
                 )}
             </div>
