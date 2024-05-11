@@ -98,6 +98,17 @@ const AuthProvider = ({children}) =>{
             });
     }
 
+    const handleProtectCreateTask = ({title,description,due_date,priority,status,creator,assignee}) => {
+        return PrivateClient.post("/create", {title,description,due_date,priority,status,creator,assignee})
+            .then((res) => {
+                return res.data;
+            })
+            .catch((error) => {
+                console.error(error);
+                throw error;
+            });
+    }
+
     const handleSignIn = (data) =>{
         AuthClient.post("/auth",data)
             .then((res) => {
@@ -132,6 +143,7 @@ const AuthProvider = ({children}) =>{
                 handleProtectTasks,
                 handleProtectTaskById,
                 handleProtectUpdateTask,
+                handleProtectCreateTask,
                 error,
                 userData
             }}
