@@ -4,7 +4,8 @@ import ModalTask from "./ModalTask";
 
 export const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleString("ru-RU", {
+    const utcDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000); // Приводим к UTC
+    return utcDate.toLocaleString("ru-RU", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
@@ -13,39 +14,36 @@ export const formatDate = (dateString) => {
     });
 };
 
-const TasksList = () => {
-    const { handleProtectTasks, handleProtectUsers } = useContext(Auth);
-    const [ users, setUsers ] = useState([]);
+const TasksList = ({users}) => {
+    const { handleProtectTasks,userData } = useContext(Auth);
     const [ tasks, setTasks ] = useState([]);
     const [ selectedDueDate, setSelectedDueDate ] = useState("all");
     const [ selectedAssignee, setSelectedAssignee ] = useState("all");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
 
+    const fetchTasks = () => {
+        handleProtectTasks()
+            .then((tasksList) => {
+                setTasks(tasksList);
+            })
+            .catch((error) => {
+                console.error("Ошибка:", error);
+            });
+    };
+
     useEffect(() => {
-        const fetchTasks = () => {
-            handleProtectTasks()
-                .then((tasksList) => {
-                    setTasks(tasksList);
-                })
-                .catch((error) => {
-                    console.error("Ошибка:", error);
-                });
-        };
-    
-        const fetchUsers = () => {
-            handleProtectUsers()
-                .then((usersList) => {
-                    setUsers(usersList);
-                })
-                .catch((error) => {
-                    console.error("Ошибка:", error);
-                });
-        };
-    
         fetchTasks();
-        fetchUsers();
     }, []);
+
+    const handleTaskUpdate = async () => {
+        try {
+            fetchTasks();
+            
+        } catch (error) {
+            console.error("Ошибка при обновлении задач:", error);
+        }
+    };
 
     const getTitleColor = (task) => {
         const currentDate = new Date();
@@ -74,7 +72,16 @@ const TasksList = () => {
     };
 
     const handleNewTask = () => {
-        setSelectedTask(null);
+        setSelectedTask({
+            id: null,
+            title: "",
+            due_date: null,
+            description: "",
+            priority: 3,
+            status: 1,
+            assignee: null,
+            creator: userData.id,
+        });
         setIsModalOpen(true);
     };
 
@@ -117,12 +124,17 @@ const TasksList = () => {
             } else {
                 return task.assignee_name === selectedAssignee;
             }
+        })
+        .sort((a, b) => {
+            const dateA = new Date(a.updated_at);
+            const dateB = new Date(b.updated_at);
+            return dateB - dateA;
         });
 
     return (
         <div className="flex justify-center">
             {isModalOpen && (
-                <ModalTask onClose={handleCloseModal} taskId={selectedTask}/>
+                <ModalTask key={isModalOpen} onClose={handleCloseModal} task={selectedTask} users={users} onTaskUpdate={handleTaskUpdate}/>
             )}
             <div className="w-3/4 py-6">
                 <div className="sm:mx-auto sm:w-full sm:max-w-sm">
@@ -171,7 +183,7 @@ const TasksList = () => {
                         <div
                             key={task.id}
                             className="bg-white p-3 shadow-lg rounded-xl border-2 border-solid border-gray-100"
-                            onClick={() => handleTaskClick(task.id)}
+                            onClick={() => handleTaskClick(task)}
                         >
                             <h3
                                 className={`${getTitleColor(
