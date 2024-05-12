@@ -48,7 +48,7 @@ const SignIn = () => {
                                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                 />
                                 {(errors?.login) && (
-                                    <p className="errors">{errors?.login?.message}</p>
+                                    <p className="text-red-500 font-mono">{errors?.login?.message}</p>
                                 )}
                             </div>
                         </div>
@@ -71,13 +71,13 @@ const SignIn = () => {
                                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                 />
                                 {(errors?.password) && (
-                                    <p className="errors">{errors?.password?.message}</p>
+                                    <p className="text-red-500 font-mono">{errors?.password?.message}</p>
                                 )}
                             </div>
                         </div>
 
                         {(error) && (
-                            <p className="error">{error?.error}</p>
+                            <p className="text-red-500 font-mono">{error?.error}</p>
                         )}
                             
 
