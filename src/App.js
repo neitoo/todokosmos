@@ -8,16 +8,16 @@ import SignIn from './pages/SignIn';
 function App() {
   const {isUserLogged} = useContext(Auth);
   return (
-    <BrowserRouter basename="/todokosmos">
+    <BrowserRouter>
       <Routes>
         {isUserLogged ? (
-          <Route path="/tasks" element={<Main/>}/>
+          <Route path="/todokosmos/tasks" element={<Main/>}/>
         ) : (
           <>
-          <Route path="/sign-in" element={<SignIn/>}/>
+          <Route path="/todokosmos/sign-in" element={<SignIn/>}/>
           </>
         )}
-        <Route path="*" element={<Navigate to={isUserLogged ? "/tasks" : "/sign-in"}/>}/>
+        <Route path="*" element={<Navigate to={isUserLogged ? "/todokosmos/tasks" : "/todokosmos/sign-in"}/>}/>
       </Routes>
     </BrowserRouter>
   );
