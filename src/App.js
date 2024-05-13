@@ -11,13 +11,13 @@ function App() {
     <BrowserRouter>
       <Routes>
         {isUserLogged ? (
-          <Route path="/todokosmos/tasks" element={<Main/>}/>
+          <Route path="/tasks" element={<Main/>}/>
         ) : (
           <>
-          <Route path="/todokosmos/sign-in" element={<SignIn/>}/>
+          <Route path="/sign-in" element={<SignIn/>}/>
           </>
         )}
-        <Route path="*" element={<Navigate to={isUserLogged ? "/todokosmos/tasks" : "/todokosmos/sign-in"}/>}/>
+        <Route path="*" element={<Navigate to={isUserLogged ? "/tasks" : "/sign-in"}/>}/>
       </Routes>
     </BrowserRouter>
   );
