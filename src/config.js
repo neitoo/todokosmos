@@ -1,4 +1,4 @@
 // eslint-disable-next-line import/no-anonymous-default-export
 export default {
-    API_URL: "http://localhost:5000",
+    API_URL: "https://kosmos-server.onrender.com",
 };
