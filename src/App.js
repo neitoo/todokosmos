@@ -8,7 +8,7 @@ import SignIn from './pages/SignIn';
 function App() {
   const {isUserLogged} = useContext(Auth);
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/todokosmos">
       <Routes>
         {isUserLogged ? (
           <Route path="/tasks" element={<Main/>}/>
