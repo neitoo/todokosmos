@@ -14,11 +14,11 @@ export const formatDate = (dateString) => {
     });
 };
 
-const TasksList = ({users}) => {
-    const { handleProtectTasks,userData } = useContext(Auth);
-    const [ tasks, setTasks ] = useState([]);
-    const [ selectedDueDate, setSelectedDueDate ] = useState("all");
-    const [ selectedAssignee, setSelectedAssignee ] = useState("all");
+const TasksList = ({ users }) => {
+    const { handleProtectTasks, userData } = useContext(Auth);
+    const [tasks, setTasks] = useState([]);
+    const [selectedDueDate, setSelectedDueDate] = useState("all");
+    const [selectedAssignee, setSelectedAssignee] = useState("all");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
 
@@ -39,7 +39,6 @@ const TasksList = ({users}) => {
     const handleTaskUpdate = async () => {
         try {
             fetchTasks();
-            
         } catch (error) {
             console.error("Ошибка при обновлении задач:", error);
         }
@@ -95,46 +94,54 @@ const TasksList = ({users}) => {
     };
 
     const filteredTasks = tasks
-        .filter((task) => {
-            if (selectedDueDate === "all") {
-                return true;
-            } else if (selectedDueDate === "today") {
-                const dueDate = new Date(task.due_date);
-                const today = new Date();
-                return dueDate.toDateString() === today.toDateString();
-            } else if (selectedDueDate === "week") {
-                const dueDate = new Date(task.due_date);
-                const today = new Date();
-                const weekFromToday = new Date(
-                    today.getTime() + 7 * 24 * 60 * 60 * 1000
-                );
-                return dueDate >= today && dueDate <= weekFromToday;
-            } else {
-                const dueDate = new Date(task.due_date);
-                const today = new Date();
-                const weekFromToday = new Date(
-                    today.getTime() + 7 * 24 * 60 * 60 * 1000
-                );
-                return dueDate > weekFromToday;
-            }
-        })
-        .filter((task) => {
-            if (selectedAssignee === "all") {
-                return true;
-            } else {
-                return task.assignee_name === selectedAssignee;
-            }
-        })
-        .sort((a, b) => {
-            const dateA = new Date(a.updated_at);
-            const dateB = new Date(b.updated_at);
-            return dateB - dateA;
-        });
+        ? tasks
+              .filter((task) => {
+                  if (selectedDueDate === "all") {
+                      return true;
+                  } else if (selectedDueDate === "today") {
+                      const dueDate = new Date(task.due_date);
+                      const today = new Date();
+                      return dueDate.toDateString() === today.toDateString();
+                  } else if (selectedDueDate === "week") {
+                      const dueDate = new Date(task.due_date);
+                      const today = new Date();
+                      const weekFromToday = new Date(
+                          today.getTime() + 7 * 24 * 60 * 60 * 1000
+                      );
+                      return dueDate >= today && dueDate <= weekFromToday;
+                  } else {
+                      const dueDate = new Date(task.due_date);
+                      const today = new Date();
+                      const weekFromToday = new Date(
+                          today.getTime() + 7 * 24 * 60 * 60 * 1000
+                      );
+                      return dueDate > weekFromToday;
+                  }
+              })
+              .filter((task) => {
+                  if (selectedAssignee === "all") {
+                      return true;
+                  } else {
+                      return task.assignee_name === selectedAssignee;
+                  }
+              })
+              .sort((a, b) => {
+                  const dateA = new Date(a.updated_at);
+                  const dateB = new Date(b.updated_at);
+                  return dateB - dateA;
+              })
+        : [];
 
     return (
         <div className="flex justify-center">
             {isModalOpen && (
-                <ModalTask key={isModalOpen} onClose={handleCloseModal} task={selectedTask} users={users} onTaskUpdate={handleTaskUpdate}/>
+                <ModalTask
+                    key={isModalOpen}
+                    onClose={handleCloseModal}
+                    task={selectedTask}
+                    users={users}
+                    onTaskUpdate={handleTaskUpdate}
+                />
             )}
             <div className="w-3/4 py-6">
                 <div className="sm:mx-auto sm:w-full sm:max-w-sm">
@@ -178,46 +185,52 @@ const TasksList = ({users}) => {
                         Новая задача
                     </button>
                 </div>
-                <div className="container grid gap-4 my-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ">
-                    {filteredTasks.map((task) => (
-                        <div
-                            key={task.id}
-                            className="bg-white p-3 shadow-lg rounded-xl border-2 border-solid border-gray-100"
-                            onClick={() => handleTaskClick(task)}
-                        >
-                            <h3
-                                className={`${getTitleColor(
-                                    task
-                                )} text-lg font-semibold`}
+                <div className={`container grid gap-4 my-6 ${filteredTasks.length === 0 ? "sm:grid-cols-1 md:grid-cols-1 lg:grid.cols-1" : "sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}>
+                    {filteredTasks.length > 0 ? (
+                        filteredTasks.map((task) => (
+                            <div
+                                key={task.id}
+                                className="bg-white p-3 shadow-lg rounded-xl border-2 border-solid border-gray-100"
+                                onClick={() => handleTaskClick(task)}
                             >
-                                {task.title}
-                            </h3>
-                            <p className="text-gray-500 text-sm">
-                                Приоритет:{" "}
-                                <span className="text-black text-base">
-                                    {task.priority_name}
-                                </span>
-                            </p>
-                            <p className="text-gray-500 text-sm">
-                                Статус:{" "}
-                                <span className="text-black text-base">
-                                    {task.status_name}
-                                </span>
-                            </p>
-                            <p className="text-gray-500 text-sm">
-                                Дата окончания:{" "}
-                                <span className="text-black text-base">
-                                    {formatDate(task.due_date)}
-                                </span>
-                            </p>
-                            <p className="text-gray-500 text-sm">
-                                Ответственный:{" "}
-                                <span className="text-black text-base">
-                                    {task.assignee_name}
-                                </span>
-                            </p>
+                                <h3
+                                    className={`${getTitleColor(
+                                        task
+                                    )} text-lg font-semibold`}
+                                >
+                                    {task.title}
+                                </h3>
+                                <p className="text-gray-500 text-sm">
+                                    Приоритет:{" "}
+                                    <span className="text-black text-base">
+                                        {task.priority_name}
+                                    </span>
+                                </p>
+                                <p className="text-gray-500 text-sm">
+                                    Статус:{" "}
+                                    <span className="text-black text-base">
+                                        {task.status_name}
+                                    </span>
+                                </p>
+                                <p className="text-gray-500 text-sm">
+                                    Дата окончания:{" "}
+                                    <span className="text-black text-base">
+                                        {formatDate(task.due_date)}
+                                    </span>
+                                </p>
+                                <p className="text-gray-500 text-sm">
+                                    Ответственный:{" "}
+                                    <span className="text-black text-base">
+                                        {task.assignee_name}
+                                    </span>
+                                </p>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-center text-gray-800 text-xl">
+                            Задачи отсутствуют.
                         </div>
-                    ))}
+                    )}
                 </div>
             </div>
         </div>
