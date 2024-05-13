@@ -17,7 +17,7 @@ function App() {
           <Route path="/sign-in" element={<SignIn/>}/>
           </>
         )}
-        <Route path="*" element={<Navigate to={isUserLogged ? "tasks" : "sign-in"}/>}/>
+        <Route path="*" element={<Navigate to={isUserLogged ? "/tasks" : "/sign-in"}/>}/>
       </Routes>
     </BrowserRouter>
   );
